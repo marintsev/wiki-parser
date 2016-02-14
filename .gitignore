@@ -1,3 +1,7 @@
 Debug/src/*.d
 Debug/src/*.o
 Debug/wiki-parser
+/Debug/
+.#*
+*#
+*~

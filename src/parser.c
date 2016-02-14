@@ -19,8 +19,9 @@
  #define FAIL(x) ((x) == NULL))*/
 
 #define FAIL(x) ((x)<0)
-
 #define EOL (-2)
+#define NOT_EOL ((x) != EOL)
+
 #define FAILURE (-1)
 
 /*  0 -- EOF
@@ -70,8 +71,9 @@ int IdentChar(char * s, char * data) {
 //#define ARRAY_SET(buffer,size,ptr,val) { buffer[ptr]=val; ptr++; }
 
 int Ident(char * s, char ** data) {
+	// TODO: перевести на макросы
+	int buffer_size = 16;
 	char * buffer = malloc(16);
-	int buffer_size = buffer;
 	int buffer_ptr = 0;
 
 	int ret;
@@ -98,7 +100,7 @@ int Ident(char * s, char ** data) {
 		buffer_ptr++;
 		// TODO: realloc
 		*data = buffer;
-		return buffer_ptr-1;
+		return buffer_ptr - 1;
 	} else {
 		return -1;
 	}
@@ -190,6 +192,7 @@ int String(char * s, char ** data) {
 			return shift;
 		}
 	}
+	return FAILURE;
 }
 
 // Attribute = _+ AttrName '=' String
@@ -220,26 +223,59 @@ int Attribute(char * s, struct attr * data) {
 	return FAILURE;
 }
 
-// OpenTag ← '<' Ident Attribute* _* '/' '>'
+// OpenTag ← '<' Ident Attribute* _* '/'? '>'
 int OpenTag(char * s, struct open_tag * data) {
 	int shift = 0;
-	int ret;
-	ret = Char(s, '<');
-	if (SUCCESS(ret)) {
-		shift += ret;
-		ret = _s(s + shift);
-		if (SUCCESS(ret)) {
-			shift += ret;
-			ret = Char(s + shift, '/');
-			if (SUCCESS(ret)) {
-				shift += ret;
-				ret = Char(s + shift, '>');
-				if (SUCCESS(ret)) {
-					shift += ret;
+	int r;
+	r = Char(s, '<');
+	if (SUCCESS(r)) {
+		shift += r;
+		r = Ident(s + shift, &data->name);
+		if (SUCCESS(r)) {
+			shift += r;
+			struct attr_list * head = NULL;
+
+			while (1) {
+				struct attr attr;
+				r = Attribute(s + shift, &attr);
+				if (SUCCESS(r)) {
+					shift += r;
+					struct attr_list * new = malloc(sizeof(struct attr_list));
+					new->attr = attr;
+					new->next = NULL;
+
+					if (head == NULL) {
+						head = new;
+					} else {
+						struct attr_list * p = head;
+						while (p->next)
+							p = p->next;
+						p->next = new;
+					}
+				} else {
+					break;
+				}
+			}
+
+			r = _s(s + shift);
+			if (SUCCESS(r)) {
+				shift += r;
+				r = Char(s + shift, '/');
+				if (SUCCESS(r)) {
+					shift += r;
+					data->is_oneline = 1;
+				} else {
+					data->is_oneline = 0;
+				}
+
+				r = Char(s + shift, '>');
+				if (SUCCESS(r)) {
+					shift += r;
+					data->attrs = head;
 					return shift;
 				}
 			}
 		}
-	} else
-		return FAILURE;
+	}
+	return FAILURE;
 }

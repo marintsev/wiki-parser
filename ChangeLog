@@ -1,4 +1,7 @@
 2016-02-14  Myron Marintsev  <veritas@debian.mobile>
 
+	* parser.c (OpenTag). Разбирает как обычный открывающий
+	тэг, так и однострочный.
+
 	* parser.c: Функции _p, Ident, String, Attribute.
 
