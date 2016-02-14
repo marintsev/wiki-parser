@@ -1,5 +1,8 @@
-all:
+all: debug release
 	make -C ./Debug all
+	
+release:
+	make -C ./Release all
 
 wiki0.xml: wiki1.xml
 	cat $< | head -n 10000 > $@

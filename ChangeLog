@@ -1,5 +1,17 @@
 2016-02-14  Myron Marintsev  <veritas@debian.mobile>
 
+	* wiki-parser.c (newlines). Считает количество \n в строке, чтобы показать в какой строке ошибка.
+
+	* wiki-parser.c (wiki_tag_open, wiki_tag_close,title,wiki_text). Собирает текст внутри тэга <title>.
+
+	* wiki-parser.c (wiki_free_stack). Если нет всех закрывающихся тэгов, то была утечка памяти.
+
+	* parser.c (Set,Ident,CloseTag). Исправление, чтобы возвращала EOL.
+
+	* make_list.sh. Проходится по всем wiki[1-4].xml и создаёт wiki[1-4].lst со списком статей длиной < 128 байт.
+
+	* Makefile (debug,release,all). Не только debug можно собрать теперь.
+
 	* wiki-parser.c (main). Показывает деревом открытие и закрытие тэгов.
 
 	* wiki-parser.c (main). Если есть параметр, то читает этот файл, если нет -- то выходит с ошибкой. line увеличивается в два раза, если это необходимо.

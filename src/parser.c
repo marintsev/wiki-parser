@@ -42,10 +42,10 @@ int Set(char * s, int (*acceptor)(char c, void * data), void * data) {
 		if (acceptor(*s, data)) {
 			return 1;
 		} else {
-			return -2;
+			return FAILURE;
 		}
 	} else {
-		return -1;
+		return EOL;
 	}
 }
 
@@ -111,11 +111,11 @@ int Ident(char * s, char ** data) {
 		// TODO: realloc
 		*data = buffer;
 		return buffer_ptr - 1;
+	} else {
+		free(buffer);
+		*data = NULL;
+		return ret;
 	}
-
-	free(buffer);
-	*data = NULL;
-	return FAILURE;
 }
 
 int __(char c, void * data) {
@@ -389,8 +389,11 @@ int CloseTag(char * s, char ** name) {
 					if (*name)
 						free(*name);
 				}
+				return r;
 			}
+			return r;
 		}
+		return r;
 	}
 	return r;
 }
