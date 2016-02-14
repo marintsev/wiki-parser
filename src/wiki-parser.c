@@ -93,22 +93,23 @@ struct xml_walker wiki_walker = { .tag_open = wiki_tag_open, .tag_close =
 //     EOL. Конец строки
 //     >=0. Количество взятых символов
 int consume(struct xml_walker * walker, char ** str) {
-	if( *str == NULL )
+	if (*str == NULL)
 		return FAILURE;
 
-	printf( "consuming at \"%s\"...\n", *str );
+	printf("consuming at \"%s\"...\n", *str);
 
 	if (**str == 0)
 		return EOL;
 
 	struct open_tag tag;
 	int shift = 0;
-	int r = OpenTag(*str, &tag);
 	char * text = NULL;
+	int r;
+	r = CloseTag(*str, &text);
 	if (SUCCESS(r)) {
 		shift = r;
 		*str += shift;
-		walker->tag_open(&tag);
+		walker->tag_close(text);
 		return shift;
 	} else {
 		r = Text(*str, &text);
@@ -118,8 +119,16 @@ int consume(struct xml_walker * walker, char ** str) {
 			walker->text(text);
 			return shift;
 		} else {
-			walker->error(*str);
-			return FAILURE;
+			r = OpenTag(*str, &tag);
+			if (SUCCESS(r)) {
+				shift = r;
+				*str += shift;
+				walker->tag_open(&tag);
+				return shift;
+			} else {
+				walker->error(*str);
+				return FAILURE;
+			}
 		}
 	}
 }
@@ -178,7 +187,9 @@ int main(void) {
 		}
 	}
 	if (!ok) {
-		printf("Ошибка, ошибка!!!");
+		char * name = NULL;
+		CloseTag(str, &name);
+		printf("</%s>", name);
 	}
 
 	/*if (str == NULL)

@@ -1,5 +1,23 @@
 2016-02-14  Myron Marintsev  <veritas@debian.mobile>
 
+	* wiki-parser.c (consume). Берёт из строки либо открывающий тэг, либо текст.
+	// int consume( struct xml_walker * walker, char ** str )
+	И сдвигает вправо *str, если это было успешно.
+	Возвращает количество потреблённых знаков.
+	Либо EOL, если строка окончилась.
+	Либо FAILURE, если передан NULL или разобрать не удаётся.
+
+	* wiki-parser.c (struct xml_walker). Поля-функции text и error.
+	void (*text) ( char * text )
+	void (*error)( char * at )
+
+	* wiki-parser.c (text_print). Печатает результат функции Text.
+	Текст может быть NULL, поэтому нужна особая функция.
+
+	* parser.c (Text). Разбирает непустой текст между тэгами.
+
+	* parser.c (EOL,FAILURE). EOL, FAILURE перенесены в parser.h
+
 	* wiki-parser.c. Читает первую строку файла и разбирает её.
 
 	* wiki-parser.c (struct xml_walker). Наметки для потокового парсера.

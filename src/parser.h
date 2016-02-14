@@ -34,5 +34,6 @@ extern int Attribute(char * s, struct attr * data);
 extern int OpenTag(char * s, struct open_tag * data);
 extern int AttrName(char * s, struct attr * attr);
 extern int Text(char * s, char ** data);
+extern int CloseTag(char * s, char ** name);
 
 #endif

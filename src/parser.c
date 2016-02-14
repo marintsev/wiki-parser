@@ -58,13 +58,22 @@ int Set(char * s, int (*acceptor)(char c, void * data), void * data) {
 #define SET(type,var,val) *((type*)(var)) = val
 #define GET(type,var) (*((type*)(var)))
 
-int _IdentChar(char c, void * data) {
+int _IdentChar1(char c, void * data) {
 	SET(char, data, c);
 	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-int IdentChar(char * s, char * data) {
-	return Set(s, _IdentChar, data);
+int _IdentCharn(char c, void * data) {
+	SET(char, data, c);
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+}
+
+int IdentChar1(char * s, char * data) {
+	return Set(s, _IdentChar1, data);
+}
+
+int IdentCharn(char * s, char * data) {
+	return Set(s, _IdentCharn, data);
 }
 
 //#define ARRAY_SET(buffer,size,ptr,val) { buffer[ptr]=val; ptr++; }
@@ -77,13 +86,13 @@ int Ident(char * s, char ** data) {
 
 	int ret;
 	char IdentChar_data;
-	ret = IdentChar(s, &IdentChar_data);
+	ret = IdentChar1(s, &IdentChar_data);
 	if (SUCCESS(ret)) {
 		s += ret;
 		buffer[buffer_ptr] = IdentChar_data;
 		buffer_ptr++;
 		while (1) {
-			ret = IdentChar(s, &IdentChar_data);
+			ret = IdentCharn(s, &IdentChar_data);
 			if (SUCCESS(ret)) {
 				s += ret;
 				if (buffer_size == buffer_ptr) {
@@ -336,3 +345,33 @@ int OpenTag(char * s, struct open_tag * data) {
 	}
 	return FAILURE;
 }
+
+// CloseTag <- '<' '/' Ident '>'
+int CloseTag(char * s, char ** name) {
+	int shift = 0;
+	int r;
+	r = Char(s, '<');
+	if (SUCCESS(r)) {
+		shift += r;
+		r = Char(s + shift, '/');
+		if (SUCCESS(r)) {
+			shift += r;
+			r = Ident(s + shift, name);
+			if (SUCCESS(r)) {
+				shift += r;
+				r = Char(s + shift, '>');
+				if (SUCCESS(r)) {
+					shift += r;
+					return r;
+				}
+			}
+		}
+	}
+	return FAILURE;
+}
+
+/*
+int Element( char * s, void ** data )
+{
+
+}*/
