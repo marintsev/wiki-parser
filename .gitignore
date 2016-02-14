@@ -6,3 +6,7 @@ Debug/wiki-parser
 *#
 *~
 /Release/
+perf.data
+perf.data.old
+wiki0.xml
+Wikipedia

@@ -42,6 +42,19 @@ void text_print(char * text) {
 	printf("%s", text);
 }
 
+// -----------------------------------
+
+FILE * f = NULL;
+char * line = NULL;
+
+void done(int code) {
+	if (line)
+		free(line);
+	if (f)
+		fclose(f);
+	exit(code);
+}
+
 // --------------------------------
 
 struct xml_walker {
@@ -51,13 +64,49 @@ struct xml_walker {
 	void (*error)(char * at);
 };
 
+char * stack[16];
+int stack_ptr = 0;
+int stack_size = 16;
+
+void indent(int level) {
+	int i;
+	for (i = 0; i < level; i++)
+		putchar(' ');
+}
+
 void wiki_tag_open(struct open_tag * tag) {
+	indent( stack_ptr );
+	printf("+%s\n",tag->name);
+
+	if (stack_ptr == stack_size) {
+		fprintf(stderr, "Слишком глубоко-вложенный .xml.");
+		done(7);
+	}
+	stack[stack_ptr] = strdup(tag->name);
+	stack_ptr++;
+
 	/*printf("Открывается тэг: ");
 	 open_tag_print(tag);
 	 printf("\n");*/
 }
 
 void wiki_tag_close(char * name) {
+	again:
+	if (stack_ptr == 0) {
+		fprintf(stderr, "Stack underflow.");
+		done(8);
+	}
+	stack_ptr--;
+	if (strcmp(name, stack[stack_ptr]) == 0) {
+
+		indent(stack_ptr);
+		printf("-%s\n", stack[stack_ptr]);
+
+		free(stack[stack_ptr]);
+		return;
+	} else
+		goto again;
+
 	/*printf("Закрывается тэг %s.\n", name);*/
 }
 
@@ -150,22 +199,11 @@ int consume(struct xml_walker * walker, char ** str) {
 	}
 }
 
-FILE * f = NULL;
-char * line = NULL;
-
-void done(int code) {
-	if (line)
-		free(line);
-	if (f)
-		fclose(f);
-	exit(code);
-}
-
 /*void atdone() {
-	if (f)
-		fclose(f);
-	exit(255);
-}*/
+ if (f)
+ fclose(f);
+ exit(255);
+ }*/
 
 int main(int argc, char * argv[]) {
 	/*atexit(atdone);*/
@@ -174,8 +212,10 @@ int main(int argc, char * argv[]) {
 
 	if (argc == 2) {
 		fn_input = argv[1];
+	} else if (argc == 1) {
+		// fn_input уже задан
 	} else {
-		fprintf(stderr, "Usage: bad.\n");
+		fprintf(stderr, "Usage: ./wiki-parser [wiki.xml].\n");
 		done(5);
 	}
 
@@ -193,20 +233,20 @@ int main(int argc, char * argv[]) {
 	 if (line[i] == '\n')
 	 line[i] = 0;*/
 
-	//char * str = "<test heaver=\"hell\" />";
+//char * str = "<test heaver=\"hell\" />";
 	/*int r;*/
 	/*struct attr attr;
 	 attr.namespace = NULL;
 	 attr.name = NULL;
 	 attr.value = NULL;*/
 
-	//char * str = " xmlns=\"http://www.mediawiki.org/xml/export-0.10/\"";
-	//char * str = " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
-	// xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="ru"
+//char * str = " xmlns=\"http://www.mediawiki.org/xml/export-0.10/\"";
+//char * str = " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
+// xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="ru"
 	/*char * name;*/
 	/*r = Attribute(str, &attr);*/
 	/*int shift = 0;*/
-	//printf("len=%lu", strlen(line));
+//printf("len=%lu", strlen(line));
 	/*char * text = NULL;
 	 struct open_tag tag;
 	 int r = OpenTag(line, &tag);
