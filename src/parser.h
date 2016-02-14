@@ -5,7 +5,9 @@
 #include <stdio.h>
 
 struct attr {
-	char *name, *value;
+	char * namespace; // Может быть NULL. Для xmlns:xsi будет "xmlns".
+	char * name;	  // для xmlns:xsi будет "xsi"
+	char * value;
 };
 
 struct attr_list {
@@ -27,5 +29,6 @@ extern int Ident( char * s, char ** data );
 extern int String(char * s, char ** data);
 extern int Attribute(char * s, struct attr * data);
 extern int OpenTag(char * s, struct open_tag * data);
+extern int AttrName(char * s, struct attr * attr);
 
 #endif

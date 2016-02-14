@@ -10,49 +10,88 @@
 
 #include "parser.h"
 
-void xml_string_print( char * str )
-{
+void xml_string_print(char * str) {
 	// TODO: escape value string properly
-	printf("\"%s\"", str );
+	printf("\"%s\"", str);
 }
 
 void attr_print(struct attr * attr) {
-
-	printf(" %s=", attr->name );
-	xml_string_print( attr->value );
+	printf(" ");
+	if (attr->namespace)
+		printf("%s:", attr->namespace);
+	printf("%s=", attr->name);
+	xml_string_print(attr->value);
 }
 
 void open_tag_print(struct open_tag * tag) {
 	printf("<%s", tag->name);
 	struct attr_list * p = tag->attrs;
 	while (p) {
-		attr_print( &p->attr );
+		attr_print(&p->attr);
 		p = p->next;
 	}
-	if( tag->is_oneline )
+	if (tag->is_oneline)
 		printf(" />");
 	else
 		printf(">");
 }
 
+struct xml_walker
+{
+	void (*tag_open)( struct open_tag * tag );
+	void (*tag_close)( char * name );
+};
 
+void tag_open( struct open_tag * tag )
+{
+	printf( "Открывается тэг: " );
+	open_tag_print( tag );
+}
+
+void tag_close( char * name )
+{
+	printf("Закрывается тэг %s.\n", name );
+}
+
+struct xml_walker wiki_walker =
+{
+	.tag_open = tag_open,
+	.tag_close = tag_close
+};
 
 int main(void) {
-	char * str = "<test heaver=\"hell\" />";
+	FILE * f = fopen("wiki1.xml", "rt");
+
+	char line[256];
+	if ( NULL == fgets(line, 256, f))
+		return 1;
+
+	printf("%s", line);
+
+	//char * str = "<test heaver=\"hell\" />";
 	int r;
 	/*struct attr attr;
-	 attr.name = NULL;
-	 attr.value = NULL;*/
+	attr.namespace = NULL;
+	attr.name = NULL;
+	attr.value = NULL;*/
 
 	struct open_tag tag;
 
+	//char * str = " xmlns=\"http://www.mediawiki.org/xml/export-0.10/\"";
+	//char * str = " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
+
+	// xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="ru"
+
 	/*char * name;*/
-	r = OpenTag(str, &tag);
+	/*r = Attribute(str, &attr);*/
+	r = OpenTag(line, &tag);
 	printf("ret = %d\n", r);
 	if (SUCCESS(r)) {
 		open_tag_print(&tag);
-
+		//attr_print(&attr);
 	}
+
+	fclose(f);
 
 	return 0;
 }

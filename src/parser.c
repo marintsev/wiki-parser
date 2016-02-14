@@ -4,6 +4,7 @@
 // _ <- [ \t\n]
 // IdentChar <- [a-zA-Z]
 // Ident <- IdentChar+
+// AttrName <- Namespace ':' Ident / Ident
 // OpenTag ← '<' Ident (_+ AttrName '=' String)* _* '/' '>'
 // CloseTag <- '<' '/' Ident '>'
 // TextChar <- [^<]
@@ -188,7 +189,32 @@ int String(char * s, char ** data) {
 		r = Char(s + shift, '"');
 		if (SUCCESS(r)) {
 			shift += r;
+			ARRAY_PUSH(buffer, 0);
 			*data = ARRAY_BUF(buffer);
+			return shift;
+		}
+	}
+	return FAILURE;
+}
+
+// AttrName <- Ident ':' Ident / Ident
+int AttrName(char * s, struct attr * attr) {
+	int r;
+	r = Ident(s, &attr->namespace);
+	int shift = 0;
+	if (SUCCESS(r)) {
+		shift += r;
+		r = Char(s + shift, ':');
+		if (SUCCESS(r)) {
+			shift += r;
+			r = Ident(s+shift, &attr->name);
+			if (SUCCESS(r)) {
+				shift += r;
+				return shift;
+			}
+		} else {
+			attr->name = attr->namespace;
+			attr->namespace = NULL;
 			return shift;
 		}
 	}
@@ -203,7 +229,7 @@ int Attribute(char * s, struct attr * data) {
 		shift += r;
 		/*printf("%d ", shift);*/
 		// TODO: заменить на AttrName
-		r = Ident(s + shift, &data->name);
+		r = AttrName(s + shift, data );
 		if (SUCCESS(r)) {
 			shift += r;
 			/*printf(" %d", shift);*/
@@ -222,6 +248,8 @@ int Attribute(char * s, struct attr * data) {
 	}
 	return FAILURE;
 }
+
+
 
 // OpenTag ← '<' Ident Attribute* _* '/'? '>'
 int OpenTag(char * s, struct open_tag * data) {
