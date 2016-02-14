@@ -21,8 +21,6 @@
 
 #define FAIL(x) ((x)<0)
 
-#define NOT_EOL ((x) != EOL)
-
 /*  0 -- EOF
  * -1 -- Failure
  *  1 -- Success
@@ -32,10 +30,10 @@ int Char(char * s, char pattern) {
 		if (*s == pattern) {
 			return 1;
 		} else {
-			return -2;
+			return FAILURE;
 		}
 	} else {
-		return -1;
+		return EOL;
 	}
 }
 
@@ -65,7 +63,8 @@ int _IdentChar1(char c, void * data) {
 
 int _IdentCharn(char c, void * data) {
 	SET(char, data, c);
-	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+			|| (c >= '0' && c <= '9');
 }
 
 int IdentChar1(char * s, char * data) {
@@ -78,6 +77,9 @@ int IdentCharn(char * s, char * data) {
 
 //#define ARRAY_SET(buffer,size,ptr,val) { buffer[ptr]=val; ptr++; }
 
+/* В случае успеха выделяет память и *data указывает на неё.
+ * В случае неуспеха *data == NULL, ничего освобождать не надо.
+ */
 int Ident(char * s, char ** data) {
 	// TODO: перевести на макросы
 	int buffer_size = 16;
@@ -109,9 +111,11 @@ int Ident(char * s, char ** data) {
 		// TODO: realloc
 		*data = buffer;
 		return buffer_ptr - 1;
-	} else {
-		return -1;
 	}
+
+	free(buffer);
+	*data = NULL;
+	return FAILURE;
 }
 
 int __(char c, void * data) {
@@ -175,7 +179,10 @@ int _StringChar(char c, void * data) {
 		return 0;
 }
 
-// String <- " ^["]* "
+/* String <- " ^["]* "
+ * Если SUCCESS, то *data -- свежесозданная строка.
+ * Если FAILURE, то *data == NULL, ничего освобождать не надо.
+ */
 int String(char * s, char ** data) {
 	ARRAY_INIT(buffer, 16);
 	int r = Char(s, '"');
@@ -201,6 +208,8 @@ int String(char * s, char ** data) {
 			return shift;
 		}
 	}
+	free(ARRAY_BUF(buffer));
+	*data = NULL;
 	return FAILURE;
 }
 
@@ -212,6 +221,10 @@ int _TextChar(char c, void * data) {
 		return 0;
 }
 
+/*
+ * SUCCESS: *data -- выделенная строка.
+ * FAILURE: *data == NULL. Ничего освобождать не надо.
+ */
 int Text(char * s, char ** data) {
 	ARRAY_INIT(buffer, 16);
 	int r;
@@ -234,6 +247,8 @@ int Text(char * s, char ** data) {
 		*data = ARRAY_BUF(buffer);
 		return shift;
 	}
+	free(ARRAY_BUF(buffer));
+	*data = NULL;
 	return FAILURE;
 }
 
@@ -258,34 +273,39 @@ int AttrName(char * s, struct attr * attr) {
 			return shift;
 		}
 	}
+	if (attr->name)
+		free(attr->name);
+	if (attr->namespace)
+		free(attr->namespace);
 	return FAILURE;
 }
 
 // Attribute = _+ AttrName '=' String
 int Attribute(char * s, struct attr * data) {
 	int shift = 0;
+
+	data->name = NULL;
+	data->namespace = NULL;
+	data->value = NULL;
+
 	int r = _p(s);
 	if (SUCCESS(r)) {
 		shift += r;
-		/*printf("%d ", shift);*/
-		// TODO: заменить на AttrName
 		r = AttrName(s + shift, data);
 		if (SUCCESS(r)) {
 			shift += r;
-			/*printf(" %d", shift);*/
 			r = Char(s + shift, '=');
 			if (SUCCESS(r)) {
 				shift += r;
-				/*printf("3");*/
 				r = String(s + shift, &data->value);
 				if (SUCCESS(r)) {
 					shift += r;
-					/*printf("4");*/
 					return shift;
 				}
 			}
 		}
 	}
+	attr_free(data);
 	return FAILURE;
 }
 
@@ -293,6 +313,8 @@ int Attribute(char * s, struct attr * data) {
 int OpenTag(char * s, struct open_tag * data) {
 	int shift = 0;
 	int r;
+	data->name = NULL;
+	data->attrs = NULL;
 	r = Char(s, '<');
 	if (SUCCESS(r)) {
 		shift += r;
@@ -300,7 +322,6 @@ int OpenTag(char * s, struct open_tag * data) {
 		if (SUCCESS(r)) {
 			shift += r;
 			struct attr_list * head = NULL;
-
 			while (1) {
 				struct attr attr;
 				r = Attribute(s + shift, &attr);
@@ -343,6 +364,8 @@ int OpenTag(char * s, struct open_tag * data) {
 			}
 		}
 	}
+	open_tag_free(data);
+
 	return FAILURE;
 }
 
@@ -362,16 +385,18 @@ int CloseTag(char * s, char ** name) {
 				r = Char(s + shift, '>');
 				if (SUCCESS(r)) {
 					shift += r;
-					return r;
+				} else {
+					if (*name)
+						free(*name);
 				}
 			}
 		}
 	}
-	return FAILURE;
+	return r;
 }
 
 /*
-int Element( char * s, void ** data )
-{
+ int Element( char * s, void ** data )
+ {
 
-}*/
+ }*/

@@ -4,14 +4,20 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/attr.c \
+../src/open_tag.c \
 ../src/parser.c \
 ../src/wiki-parser.c 
 
 OBJS += \
+./src/attr.o \
+./src/open_tag.o \
 ./src/parser.o \
 ./src/wiki-parser.o 
 
 C_DEPS += \
+./src/attr.d \
+./src/open_tag.d \
 ./src/parser.d \
 ./src/wiki-parser.d 
 

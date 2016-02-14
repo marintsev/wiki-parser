@@ -52,19 +52,19 @@ struct xml_walker {
 };
 
 void wiki_tag_open(struct open_tag * tag) {
-	printf("Открывается тэг: ");
-	open_tag_print(tag);
-	printf("\n");
+	/*printf("Открывается тэг: ");
+	 open_tag_print(tag);
+	 printf("\n");*/
 }
 
 void wiki_tag_close(char * name) {
-	printf("Закрывается тэг %s.\n", name);
+	/*printf("Закрывается тэг %s.\n", name);*/
 }
 
 void wiki_text(char * text) {
-	printf("Текст (%ld):", text ? strlen(text) : 0);
-	text_print(text);
-	printf("\n");
+	/*printf("Текст (%ld):", text ? strlen(text) : 0);
+	 text_print(text);
+	 printf("\n");*/
 }
 
 void wiki_error(char * at) {
@@ -89,14 +89,17 @@ struct xml_walker wiki_walker = { .tag_open = wiki_tag_open, .tag_close =
 		false_body \
 	}
 
-// FAILURE. Ошибка
-//     EOL. Конец строки
+#define NEED_MORE	(-3)
+
+//   FAILURE. Ошибка
+//       EOL. Конец строки
+// NEED_MORE. Надо считать ещё.
 //     >=0. Количество взятых символов
 int consume(struct xml_walker * walker, char ** str) {
 	if (*str == NULL)
 		return FAILURE;
 
-	printf("consuming at \"%s\"...\n", *str);
+	/*printf("consuming at \"%s\"...\n", *str);*/
 
 	if (**str == 0)
 		return EOL;
@@ -110,22 +113,36 @@ int consume(struct xml_walker * walker, char ** str) {
 		shift = r;
 		*str += shift;
 		walker->tag_close(text);
+		if (text)
+			free(text);
 		return shift;
 	} else {
+		if (IS_EOL(r))
+			return NEED_MORE;
+
 		r = Text(*str, &text);
 		if (SUCCESS(r)) {
 			shift = r;
 			*str += shift;
 			walker->text(text);
+			if (text)
+				free(text);
 			return shift;
 		} else {
+			if (IS_EOL(r))
+				return NEED_MORE;
+
 			r = OpenTag(*str, &tag);
 			if (SUCCESS(r)) {
 				shift = r;
 				*str += shift;
 				walker->tag_open(&tag);
+				open_tag_free(&tag);
 				return shift;
 			} else {
+				if (IS_EOL(r))
+					return NEED_MORE;
+
 				walker->error(*str);
 				return FAILURE;
 			}
@@ -133,12 +150,43 @@ int consume(struct xml_walker * walker, char ** str) {
 	}
 }
 
-int main(void) {
-	FILE * f = fopen("wiki1.xml", "rt");
+FILE * f = NULL;
+char * line = NULL;
 
-	char line[256];
-	if ( NULL == fgets(line, 256, f))
-		return 1;
+void done(int code) {
+	if (line)
+		free(line);
+	if (f)
+		fclose(f);
+	exit(code);
+}
+
+/*void atdone() {
+	if (f)
+		fclose(f);
+	exit(255);
+}*/
+
+int main(int argc, char * argv[]) {
+	/*atexit(atdone);*/
+
+	char * fn_input = "wiki0.xml";
+
+	if (argc == 2) {
+		fn_input = argv[1];
+	} else {
+		fprintf(stderr, "Usage: bad.\n");
+		done(5);
+	}
+
+	f = fopen(fn_input, "rt");
+	if (f == NULL)
+		done(4);
+
+	int line_size = 256;
+	line = malloc(line_size);
+	if ( NULL == fgets(line, line_size, f))
+		done(1);
 
 	/*int i;
 	 for (i = strlen(line); i >= 0; i--)
@@ -177,19 +225,28 @@ int main(void) {
 	while (1) {
 		int ecode = consume(&wiki_walker, &str);
 		if (ecode == EOL) {
-			if ( NULL == fgets(line, 256, f)) {
-				return 2;
+			if ( NULL == fgets(line, line_size, f)) {
+				done(2);
 			}
 			str = line;
 		} else if (ecode == FAILURE) {
 			ok = 0;
 			break;
+		} else if (ecode == NEED_MORE) {
+			line = realloc(line, line_size * 2);
+			if ( NULL == fgets(line + line_size - 1, line_size + 1, f))
+				done(3);
+			line_size *= 2;
+			fprintf(stderr, "line_size=%d, line=%s.\n", line_size, line);
+			str = line;
+		} else if (ecode >= 0) {
+			// всё хорошо
+		} else {
+			fprintf(stderr, "ecode=%d.\n", ecode);
 		}
 	}
 	if (!ok) {
-		char * name = NULL;
-		CloseTag(str, &name);
-		printf("</%s>", name);
+		printf("It's not OK :(");
 	}
 
 	/*if (str == NULL)
@@ -211,7 +268,6 @@ int main(void) {
 	 //attr_print(&attr);
 	 }*/
 
-	fclose(f);
-
+	done(0);
 	return 0;
 }

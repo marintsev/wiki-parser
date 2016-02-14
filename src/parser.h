@@ -1,29 +1,17 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "main.h"
 
-struct attr {
-	char * namespace; // Может быть NULL. Для xmlns:xsi будет "xmlns".
-	char * name;	  // для xmlns:xsi будет "xsi"
-	char * value;
-};
-
-struct attr_list {
-	struct attr attr;
-	struct attr_list * next;
-};
-
-struct open_tag {
-	char * name;
-	struct attr_list * attrs;
-	int is_oneline;
-};
+#include "attr.h"
+#include "open_tag.h"
 
 #define SUCCESS(x) ((x)>=0)
 #define EOL (-2)
+
+#define IS_EOL(x) ((x) == EOL)
+#define NOT_EOL(x) ((x) != EOL)
+
 #define FAILURE (-1)
 
 extern int _p(char * s);

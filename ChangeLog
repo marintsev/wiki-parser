@@ -1,5 +1,39 @@
 2016-02-14  Myron Marintsev  <veritas@debian.mobile>
 
+	* wiki-parser.c (main). Если есть параметр, то читает этот файл, если нет -- то выходит с ошибкой. line увеличивается в два раза, если это необходимо.
+
+	* wiki-parser.c (done). Функция, которая освобождает line и f. Проблемы с atexit.
+
+	* wiki-parser.c (NEED_MORE). Специальную константу возвращает consume, если обнаруживает, что буффер мог бы быть разобран, если был бы длиннее.
+
+	* parser.c (CloseTag). Освобождает прочитанное имя, если неуспешно разобрала.
+
+	* parser.c (OpenTag). Освобождает все поля open_tag, что заполнила, если неуспешно разобрала.
+
+	* parser.c (Attribute). Освобождает все поля attr, что заполнила, если неуспешно разобрала.
+
+	* parser.c (AttrName). Освобождает attr->name и attr->namespace, если неуспешно разобрала.
+
+	* parser.c (Text). Освобождает буфер, если неуспешно разобрала.
+
+	* parser.c (String). Освобождает буфер, если неуспешно разобрала.
+
+	* parser.c (Ident). Освобождает буфер, если неуспешно разобрала.
+
+	* open_tag.c (open_tag_free). Освобождает и имя и список атрибутов, но не себя.
+
+	* main.h. Делает include stdlib.h, stdio.h, string.h.
+
+	* attr.c (attr_done). Освобождает всё, кроме самой структуры.
+
+	* attr.c (attr_init). Устанавливает всё в NULL.
+
+	* wiki-parser.c. Производительность работы вхолостую: 477 Mbps (debug), 1424 Mbps (release).
+
+	* parser.c (CloseTag). Закрывающий тэг.
+
+	* parser.c (IdentChar1, IdentCharn, _IdentChar1, _IdentCharn). Имя тэга может содержать цифры.
+
 	* wiki-parser.c (consume). Берёт из строки либо открывающий тэг, либо текст.
 	// int consume( struct xml_walker * walker, char ** str )
 	И сдвигает вправо *str, если это было успешно.
