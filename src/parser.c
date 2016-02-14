@@ -20,10 +20,8 @@
  #define FAIL(x) ((x) == NULL))*/
 
 #define FAIL(x) ((x)<0)
-#define EOL (-2)
-#define NOT_EOL ((x) != EOL)
 
-#define FAILURE (-1)
+#define NOT_EOL ((x) != EOL)
 
 /*  0 -- EOF
  * -1 -- Failure
@@ -197,6 +195,39 @@ int String(char * s, char ** data) {
 	return FAILURE;
 }
 
+int _TextChar(char c, void * data) {
+	if (c != '<') {
+		SET(char, data, c);
+		return 1;
+	} else
+		return 0;
+}
+
+int Text(char * s, char ** data) {
+	ARRAY_INIT(buffer, 16);
+	int r;
+	int shift = 0;
+	char cur_char;
+
+	r = Set(s, _TextChar, &cur_char);
+	if (SUCCESS(r)) {
+		shift += r;
+		ARRAY_PUSH(buffer, cur_char);
+		while (1) {
+			r = Set(s + shift, _TextChar, &cur_char);
+			if (SUCCESS(r)) {
+				shift += r;
+				ARRAY_PUSH(buffer, cur_char);
+			} else
+				break;
+		}
+		ARRAY_PUSH(buffer, 0);
+		*data = ARRAY_BUF(buffer);
+		return shift;
+	}
+	return FAILURE;
+}
+
 // AttrName <- Ident ':' Ident / Ident
 int AttrName(char * s, struct attr * attr) {
 	int r;
@@ -207,7 +238,7 @@ int AttrName(char * s, struct attr * attr) {
 		r = Char(s + shift, ':');
 		if (SUCCESS(r)) {
 			shift += r;
-			r = Ident(s+shift, &attr->name);
+			r = Ident(s + shift, &attr->name);
 			if (SUCCESS(r)) {
 				shift += r;
 				return shift;
@@ -229,7 +260,7 @@ int Attribute(char * s, struct attr * data) {
 		shift += r;
 		/*printf("%d ", shift);*/
 		// TODO: заменить на AttrName
-		r = AttrName(s + shift, data );
+		r = AttrName(s + shift, data);
 		if (SUCCESS(r)) {
 			shift += r;
 			/*printf(" %d", shift);*/
@@ -248,8 +279,6 @@ int Attribute(char * s, struct attr * data) {
 	}
 	return FAILURE;
 }
-
-
 
 // OpenTag ← '<' Ident Attribute* _* '/'? '>'
 int OpenTag(char * s, struct open_tag * data) {

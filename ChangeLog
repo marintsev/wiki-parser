@@ -1,7 +1,22 @@
 2016-02-14  Myron Marintsev  <veritas@debian.mobile>
 
-	* parser.c (OpenTag). Разбирает как обычный открывающий
-	тэг, так и однострочный.
+	* wiki-parser.c. Читает первую строку файла и разбирает её.
+
+	* wiki-parser.c (struct xml_walker). Наметки для потокового парсера.
+
+	* wiki-parser.c (attr_print). Отображает атрибуты и с namespace.
+	Соответственно, изменилась и эта функция, чтобы отображать
+	атрибуты с namespace.
+
+	* parser.h (struct attr). Добавил поле char * namespace.
+	Соответственно, появилось поле char * namespace.
+
+	* parser.c (AttrName). Разбирает имена как с namespace, так и без него.
+	Разбирает как имя как с namespace ("xmlns:xsi", например),
+	так и без него ("xsi", например).
+
+	* parser.c (OpenTag). Парсер открывающего и однострочного тэгов.
+	Разбирает как обычный открывающий тэг, так и однострочный.
 
 	* parser.c: Функции _p, Ident, String, Attribute.
 
